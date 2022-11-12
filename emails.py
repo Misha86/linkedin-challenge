@@ -30,7 +30,7 @@ class EmailAccount:
         if proxy:
             chrome_options.add_argument(f"--proxy-server={proxy}")
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        self._driver = webdriver.Chrome(executable_path='./driver/chromedriver', chrome_options=chrome_options)
+        self._driver = webdriver.Chrome(executable_path='driver/chromedriver', chrome_options=chrome_options)
 
     def set_wait_time(self, wait_seconds=20):
         self._wait = WebDriverWait(self._driver, wait_seconds)
