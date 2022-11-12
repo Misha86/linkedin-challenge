@@ -4,6 +4,7 @@ import random
 import string
 import csv
 
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -47,6 +48,11 @@ class RegistrationLinkedIn:
         except FileNotFoundError as ex:
             print(ex)
 
+    def close_driver(self):
+        print("Goodbye!!!")
+        self._driver.close()
+        return False
+
     def fill_main_form(self, email, password):
         # self._wait.until(EC.presence_of_element_located((By.ID, "email-or-phone"))).send_keys(email)
         self._wait.until(EC.presence_of_element_located((By.ID, "email-address"))).send_keys(email)
@@ -59,8 +65,8 @@ class RegistrationLinkedIn:
         self._wait.until(EC.element_to_be_clickable((By.ID, "join-form-submit"))).click()
 
     def fill_phone_number_form(self):
+        self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, "challenge-dialog__iframe")))
         while True:
-            self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, "challenge-dialog__iframe")))
             phone_number = input("Input phone number in such format '967478911': ")
             if (len(phone_number) != 9) or (not phone_number.isdigit()):
                 print("Inputted invalid phone number. Try again.")
@@ -68,7 +74,18 @@ class RegistrationLinkedIn:
             self._wait.until(EC.visibility_of_element_located(
                 (By.ID, "register-verification-phone-number"))).send_keys(phone_number)
             self._wait.until(EC.element_to_be_clickable((By.ID, "register-phone-submit-button"))).click()
-            break
+            try:
+                self._wait.until(EC.visibility_of_element_located(
+                    (By.ID, "register-verification-phone-number")))
+                print("Somethings wrong.")
+                complete_q = input("Do you want to try again? y/n: ")
+                if complete_q == "n":
+                    return self.close_driver()
+                continue
+            except TimeoutException as ex:
+                print(ex)
+                break
+        return True
 
     def fill_verify_code_form(self):
         while True:
@@ -78,29 +95,25 @@ class RegistrationLinkedIn:
                 print("Verification code should be 6 characters!")
                 complete_q = input("Do you want to try again? y/n: ")
                 if complete_q == "n":
-                    self._driver.close()
-                    print("Goodbye!!!")
-                    break
+                    return self.close_driver()
                 continue
-
-            self._wait.until(EC.visibility_of_element_located((By.ID, "verify_code"))).send_keys(verify_code)
-            self._wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Verify']"))).click()
-            break
+            self._wait.until(EC.visibility_of_element_located((By.ID, "input__phone_verification_pin"))).send_keys(
+                verify_code)
+            self._wait.until(EC.element_to_be_clickable((By.ID, "register-phone-submit-button"))).click()
+            return self.close_driver()
 
     def create(self):
-        self.set_driver()
-        self.set_wait_time()
         data = self.get_username_password()
         if data:
             first_name = self.random_string()
             last_name = self.random_string()
-
+            self.set_driver()
+            self.set_wait_time()
             self.get_method_from_url()
             self.fill_main_form(*data)
             self.fill_first_fast_names(first_name, last_name)
-            self.fill_phone_number_form()
-            self.fill_verify_code_form()
-            self._driver.close()
+            if self.fill_phone_number_form():
+                self.fill_verify_code_form()
         else:
             print("Problem with the data file or it is without email and password!")
 
@@ -109,4 +122,3 @@ if __name__ == "__main__":
     url = "https://www.linkedin.com/signup/cold-join?trk=guest_homepage-basic_nav-header-join"
     new_account = RegistrationLinkedIn(url, "list.csv")
     new_account.create()
-
