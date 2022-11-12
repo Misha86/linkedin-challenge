@@ -24,12 +24,15 @@ class EmailAccount:
 
     def set_driver(self, proxy=None):
         chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         if proxy:
             chrome_options.add_argument(f"--proxy-server={proxy}")
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         self._driver = webdriver.Chrome(executable_path='./driver/chromedriver', chrome_options=chrome_options)
 
-    def set_wait_time(self, wait_seconds=5):
+    def set_wait_time(self, wait_seconds=20):
         self._wait = WebDriverWait(self._driver, wait_seconds)
 
     def set_verify_email(self):
@@ -79,6 +82,7 @@ class EmailAccount:
                 complete_q = input("Do you want to try again? y/n: ")
                 if complete_q == "n":
                     self._driver.close()
+                    print("Goodbye!!!")
                     break
                 else:
                     print('Please try again')
