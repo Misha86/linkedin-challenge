@@ -1,14 +1,26 @@
+from PIL import Image
 from selenium import webdriver
 import warnings
 import random
 import string
 import csv
+import time
 
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+
+# proxy_ip_port = "134.122.58.174:80"
+# proxy_ip_port = "117.251.103.186:8080"
+# proxy_ip_port = "157.100.12.138:999"
+# proxy_ip_port = "31.129.163.70:78"
+# proxy_ip_port = "94.45.137.34:8080"
+# proxy_ip_port = "195.138.90.226:3128"
+# proxy_ip_port = "94.45.137.34:8080"
+# proxy_ip_port = "14.140.131.82:3128"
+proxy_ip_port = ""
 
 
 class RegistrationLinkedIn:
@@ -30,7 +42,7 @@ class RegistrationLinkedIn:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         self._driver = webdriver.Chrome(executable_path='driver/chromedriver', chrome_options=chrome_options)
 
-    def set_wait_time(self, wait_seconds=20):
+    def set_wait_time(self, wait_seconds=10):
         self._wait = WebDriverWait(self._driver, wait_seconds)
 
     def get_method_from_url(self):
@@ -64,56 +76,41 @@ class RegistrationLinkedIn:
         self._wait.until(EC.presence_of_element_located((By.ID, "last-name"))).send_keys(last_name)
         self._wait.until(EC.element_to_be_clickable((By.ID, "join-form-submit"))).click()
 
-    def fill_phone_number_form(self):
+    def get_capture(self):
         self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.CLASS_NAME, "challenge-dialog__iframe")))
-        while True:
-            phone_number = input("Input phone number in such format '967478911': ")
-            if (len(phone_number) != 9) or (not phone_number.isdigit()):
-                print("Inputted invalid phone number. Try again.")
-                continue
-            self._wait.until(EC.visibility_of_element_located(
-                (By.ID, "register-verification-phone-number"))).send_keys(phone_number)
-            self._wait.until(EC.element_to_be_clickable((By.ID, "register-phone-submit-button"))).click()
-            try:
-                self._wait.until(EC.visibility_of_element_located(
-                    (By.ID, "register-verification-phone-number")))
-                print("Somethings wrong.")
-                complete_q = input("Do you want to try again? y/n: ")
-                if complete_q == "n":
-                    return self.close_driver()
-                continue
-            except TimeoutException as ex:
-                print(ex)
-                break
-        return True
-
-    def fill_verify_code_form(self):
-        while True:
-            verify_code = input("Input verification code from sms message: ")
-
-            if len(verify_code) != 6:
-                print("Verification code should be 6 characters!")
-                complete_q = input("Do you want to try again? y/n: ")
-                if complete_q == "n":
-                    return self.close_driver()
-                continue
-            self._wait.until(EC.visibility_of_element_located((By.ID, "input__phone_verification_pin"))).send_keys(
-                verify_code)
-            self._wait.until(EC.element_to_be_clickable((By.ID, "register-phone-submit-button"))).click()
-            return self.close_driver()
+        self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.ID, "captcha-internal")))
+        self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.ID, "arkoseframe")))
+        self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.ID, "fc-iframe-wrap")))
+        self._wait.until(EC.frame_to_be_available_and_switch_to_it((By.ID, "CaptchaFrame")))
+        self._wait.until(EC.element_to_be_clickable((By.ID, "home_children_button"))).click()
+        self._wait.until(EC.visibility_of_element_located((By.ID, "game")))
+        self._wait.until(lambda d: d.save_screenshot("./static/puzzle.png"))
+        screenshot = Image.open("./static/puzzle.png")
+        screenshot.show()
+        print(
+            """Input the image number‚ which is correctly positioned using schema!
+               _______________________
+              |       |       |       |
+              |   1   |   2   |   3   |
+              |_______|_______|_______|
+              |       |       |       |
+              |   4   |   5   |   6   |
+              |_______|_______|_______|
+            """
+        )
+        image_number = input("Input the image number: ")
 
     def create(self):
         data = self.get_username_password()
         if data:
             first_name = self.random_string()
             last_name = self.random_string()
-            self.set_driver()
-            self.set_wait_time()
+            self.set_driver(proxy_ip_port)
+            self.set_wait_time(20)
             self.get_method_from_url()
             self.fill_main_form(*data)
             self.fill_first_fast_names(first_name, last_name)
-            if self.fill_phone_number_form():
-                self.fill_verify_code_form()
+            self.get_capture()
         else:
             print("Problem with the data file or it is without email and password!")
 
