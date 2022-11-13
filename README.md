@@ -49,8 +49,8 @@ requirements.txt
 - Go to the directory "your way to the project" /linkedin-challenge
 - Run the following commands
 ```
-docker build -t getEmailImage .
-docker run --name getEmailContainer --rm -ti  getEmailImage
+docker build -t get_email_image .
+docker run --name get_email_container --rm -ti  get_email_image
 ```
 - During the execution of the last command fill some data in the terminal
 - After all you get file with email address and password in the working directory

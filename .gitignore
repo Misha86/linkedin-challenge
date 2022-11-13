@@ -137,3 +137,4 @@ sonar-project.properties
 dump.rdb
 /list.csv
 /Dockerfile1
+driver/chromedriver1

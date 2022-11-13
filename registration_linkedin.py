@@ -1,3 +1,4 @@
+import os
 import time
 from io import BytesIO
 
@@ -26,9 +27,9 @@ class RegistrationLinkedIn:
 
     def set_driver(self, proxy=None):
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
-        # chrome_options.add_argument("--no-sandbox")
-        # chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         if proxy:
             chrome_options.add_argument(f"--proxy-server={proxy}")
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -91,7 +92,8 @@ class RegistrationLinkedIn:
                 self._driver.switch_to.default_content()
                 puzzle_tag = self._wait.until(
                     EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/main/section")))
-                puzzle_image = self.get_puzzle_image(puzzle_tag)
+
+                self.show_puzzle_image(puzzle_tag)
 
                 self.set_capture_iframe(capture_num)
 
@@ -101,8 +103,6 @@ class RegistrationLinkedIn:
                 except TimeoutException:
                     break
 
-                puzzle_image.show()
-                puzzle_image.close()
                 print(
                     """Input the image number‚ which is correctly positioned using schema!
                        _______________________
@@ -118,17 +118,18 @@ class RegistrationLinkedIn:
                 self._wait.until(
                     EC.visibility_of_element_located((By.XPATH, f"//*[@id='image{image_number}']/a"))).click()
 
-    def get_puzzle_image(self, element):
+    def show_puzzle_image(self, element):
         time.sleep(3)
         png = self._wait.until(lambda d: d.get_screenshot_as_png())
-        screenshot = Image.open(BytesIO(png))
-        window_size = self._driver.get_window_size().values()
-        image = screenshot.resize(window_size, Image.ANTIALIAS)
-        height, width, left_pos, top_pos = element.rect.values()
-        right_pos = left_pos + width
-        bottom_pos = top_pos + height
-        puzzle = image.crop((left_pos, top_pos, right_pos, bottom_pos))  # defines crop points
-        return puzzle
+        with Image.open(BytesIO(png)) as screenshot:
+            window_size = self._driver.get_window_size().values()
+            image = screenshot.resize(window_size, Image.ANTIALIAS)
+            height, width, left_pos, top_pos = element.rect.values()
+            right_pos = left_pos + width
+            bottom_pos = top_pos + height
+            puzzle = image.crop((left_pos, top_pos, right_pos, bottom_pos))  # defines crop points
+            puzzle.show()
+
 
     def create(self):
         data = self.get_username_password()
