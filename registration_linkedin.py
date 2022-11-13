@@ -89,7 +89,6 @@ class RegistrationLinkedIn:
 
             while True:
                 self._driver.switch_to.default_content()
-
                 puzzle_tag = self._wait.until(
                     EC.visibility_of_element_located((By.XPATH, "/html/body/div[1]/main/section")))
                 puzzle_image = self.get_puzzle_image(puzzle_tag)
@@ -103,7 +102,7 @@ class RegistrationLinkedIn:
                     break
 
                 puzzle_image.show()
-                print(dir(puzzle_image))
+                puzzle_image.close()
                 print(
                     """Input the image number‚ which is correctly positioned using schema!
                        _______________________
@@ -116,12 +115,11 @@ class RegistrationLinkedIn:
                     """
                 )
                 image_number = input("Input the image number: ")
-                puzzle_image.close()
-                puzzle_image.close()
                 self._wait.until(
                     EC.visibility_of_element_located((By.XPATH, f"//*[@id='image{image_number}']/a"))).click()
 
     def get_puzzle_image(self, element):
+        time.sleep(3)
         png = self._wait.until(lambda d: d.get_screenshot_as_png())
         screenshot = Image.open(BytesIO(png))
         window_size = self._driver.get_window_size().values()
